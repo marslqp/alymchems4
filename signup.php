@@ -23,14 +23,12 @@ if (strlen($raw) < 6) {
 
 // Teacher code validation (server-side)
 if ($role === 'teacher') {
-    // Get code from DB or env
     $env_code = getenv('TEACHER_CODE') ?: 'Chem2026!';
-    // Also check DB for custom code
     $code_row = $conn->query("SELECT setting_value FROM site_settings WHERE setting_key='teacher_code' LIMIT 1");
     if ($code_row && $code_row->num_rows > 0) {
         $env_code = $code_row->fetch_assoc()['setting_value'];
     }
-    if ($teacher_code !== $env_code) {
+    if (strtolower(trim($teacher_code)) !== strtolower(trim($env_code))) {
         echo json_encode(['error' => 'invalid_teacher_code']); exit;
     }
 }
