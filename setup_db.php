@@ -109,8 +109,22 @@ foreach ($defaults as $d) {
 
 echo "DB setup complete!\n";
 
-// Add role column to users if not exists (migration)
-$conn->query("ALTER TABLE users ADD COLUMN IF NOT EXISTS role ENUM('student','teacher','admin') NOT NULL DEFAULT 'student'");
-$conn->query("ALTER TABLE users ADD COLUMN IF NOT EXISTS subject VARCHAR(60) DEFAULT NULL");
+// Migration: add columns to existing users table if missing
+$cols = [];
+$res = $conn->query("SHOW COLUMNS FROM users");
+while ($row = $res->fetch_assoc()) $cols[] = $row['Field'];
+
+if (!in_array('role', $cols)) {
+    $conn->query("ALTER TABLE users ADD COLUMN role ENUM('student','teacher','admin') NOT NULL DEFAULT 'student'");
+    echo "Added column: role\n";
+}
+if (!in_array('subject', $cols)) {
+    $conn->query("ALTER TABLE users ADD COLUMN subject VARCHAR(60) DEFAULT NULL");
+    echo "Added column: subject\n";
+}
+if (!in_array('created_at', $cols)) {
+    $conn->query("ALTER TABLE users ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
+    echo "Added column: created_at\n";
+}
 
 $conn->close();
