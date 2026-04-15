@@ -1,58 +1,86 @@
 <?php
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
+
 require_once 'db.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    echo json_encode(['error' => 'POST only']); exit;
+    echo json_encode(['error' => 'POST only']);
+    exit;
 }
 
+// Получаем данные
 $input = json_decode(file_get_contents('php://input'), true);
-$name         = trim($input['fullname']     ?? '');
-$grade        = trim($input['grade']        ?? '');
-$raw          = $input['password']           ?? '';
-$role         = $input['role']               ?? 'student';
-$teacher_code = $input['teacher_code']       ?? '';
 
+$name  = trim($input['fullname'] ?? '');
+$grade = trim($input['grade'] ?? '');
+$raw   = $input['password'] ?? '';
+$role  = $input['role'] ?? 'student';
+$teacher_code = $input['teacher_code'] ?? '';
+
+// Проверки
 if (!$name || !$raw || !$grade) {
-    echo json_encode(['error' => 'missing_fields']); exit;
+    echo json_encode(['error' => 'missing_fields']);
+    exit;
 }
+
 if (strlen($raw) < 6) {
-    echo json_encode(['error' => 'password_short']); exit;
+    echo json_encode(['error' => 'password_short']);
+    exit;
 }
 
-// Teacher code validation (server-side)
+// ✅ ПРОСТАЯ И НАДЁЖНАЯ ПРОВЕРКА КОДА УЧИТЕЛЯ (без БД)
 if ($role === 'teacher') {
-    $env_code = getenv('TEACHER_CODE') ?: 'Chem2026!';
-    $code_row = $conn->query("SELECT setting_value FROM site_settings WHERE setting_key='teacher_code' LIMIT 1");
-    if ($code_row && $code_row->num_rows > 0) {
-        $env_code = $code_row->fetch_assoc()['setting_value'];
-    }
-    if (strtolower(trim($teacher_code)) !== strtolower(trim($env_code))) {
-        echo json_encode(['error' => 'invalid_teacher_code']); exit;
+    $correct_code = getenv('TEACHER_CODE') ?: 'Chem2026!';
+
+    if (strtolower(trim($teacher_code)) !== strtolower(trim($correct_code))) {
+        echo json_encode(['error' => 'invalid_teacher_code']);
+        exit;
     }
 }
 
-// Check if name taken
+// Проверка имени
 $chk = $conn->prepare("SELECT id FROM users WHERE LOWER(fullname)=LOWER(?)");
 $chk->bind_param('s', $name);
 $chk->execute();
 $chk->store_result();
+
 if ($chk->num_rows > 0) {
-    echo json_encode(['error' => 'name_taken']); exit;
+    echo json_encode(['error' => 'name_taken']);
+    exit;
 }
 $chk->close();
 
+// Хешируем пароль
 $hash = password_hash($raw, PASSWORD_DEFAULT);
 
+// Вставка (с защитой от ошибок)
 $stmt = $conn->prepare("INSERT INTO users (fullname, grade, password, role, total_score) VALUES (?, ?, ?, ?, 0)");
+
+if (!$stmt) {
+    echo json_encode(['error' => 'sql_prepare_error', 'detail' => $conn->error]);
+    exit;
+}
+
 $stmt->bind_param('ssss', $name, $grade, $hash, $role);
 
 if ($stmt->execute()) {
-    $new_id = $stmt->insert_id;
-    echo json_encode(['success' => true, 'name' => $name, 'grade' => $grade, 'role' => $role, 'id' => $new_id]);
+    echo json_encode([
+        'success' => true,
+        'name' => $name,
+        'grade' => $grade,
+        'role' => $role,
+        'id' => $stmt->insert_id
+    ]);
 } else {
-    echo json_encode(['error' => 'db_error', 'detail' => $conn->error]);
+    echo json_encode([
+        'error' => 'db_error',
+        'detail' => $stmt->error
+    ]);
 }
+
 $stmt->close();
 $conn->close();
