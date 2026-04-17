@@ -122,10 +122,13 @@
             roleTag.textContent = 'Ученик';
             roleTag.className = 'role-badge student-badge';
             subtext.textContent = 'Ученик лицей Алымбек Датка';
-            // Используем userData.score или 0, и userData.grade
+
             document.getElementById('main-stat').textContent = userData.score || 0;
-            document.getElementById('secondary-stat').textContent = userData.grade || '9А';
-            document.getElementById('student-panel').style.display = 'block';
+
+    // 🔥 ВАЖНО
+    loadMyClasses();
+
+    document.getElementById('student-panel').style.display = 'block';
         }
     }
 
@@ -164,6 +167,28 @@
     } else {
         msg.innerText = "❌ " + data.error;
     }
+}
+    async function loadMyClasses() {
+    const user = JSON.parse(localStorage.getItem('currentUser'));
+
+    const res = await fetch('teacher_api.php?action=my_student_classes', {
+        headers: {
+            'X-User-Id': user.id,
+            'X-User-Role': user.role
+        }
+    });
+
+    const data = await res.json();
+
+    if (!data.classes || data.classes.length === 0) {
+        document.getElementById('secondary-stat').textContent = "Нет";
+        return;
+    }
+
+    // показываем первый класс (или можно все)
+    const classNames = data.classes.map(c => c.class_name).join(', ');
+
+    document.getElementById('secondary-stat').textContent = classNames;
 }
 </script>
     
