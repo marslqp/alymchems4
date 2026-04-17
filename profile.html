@@ -53,9 +53,20 @@
         </div>
 
         <div id="student-panel">
-            <h2 class="section-title">🏆 Твои последние результаты</h2>
-            <div id="scores-list"></div>
-        </div>
+    <h2 class="section-title">🏫 Вступить в класс</h2>
+
+    <input id="invite-code" placeholder="Введи код класса (например 94A50F2)" 
+           style="width:100%;padding:12px;border-radius:10px;margin-bottom:10px;border:none;">
+
+    <button onclick="joinClass()" class="btn" style="background:#2563eb;width:100%;">
+        Вступить в класс
+    </button>
+
+    <div id="join-msg" style="margin-top:10px;font-size:13px;"></div>
+
+    <h2 class="section-title" style="margin-top:25px;">🏆 Твои последние результаты</h2>
+    <div id="scores-list"></div>
+</div>
 
         <div id="teacher-panel">
             <h2 class="section-title">📚 Ваши активные классы</h2>
@@ -125,6 +136,35 @@
     }
 
     document.addEventListener('DOMContentLoaded', initProfile);
+    async function joinClass() {
+    const code = document.getElementById('invite-code').value.trim().toUpperCase();
+    const msg = document.getElementById('join-msg');
+
+    if (!code) {
+        msg.innerText = "❌ Введи код";
+        return;
+    }
+
+    const user = JSON.parse(localStorage.getItem('currentUser'));
+
+    const res = await fetch('teacher_api.php?action=join_class', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-User-Id': user.id,
+            'X-User-Role': user.role
+        },
+        body: JSON.stringify({ invite_code: code })
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+        msg.innerText = "✅ Ты вступил в класс: " + data.class_name;
+    } else {
+        msg.innerText = "❌ " + data.error;
+    }
+}
 </script>
     
 </body>
