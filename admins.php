@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Админ-панель | AlymChems</title>
+<title>Админ-панель | AlymScience</title>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
@@ -88,7 +88,7 @@ h2{font-size:20px;font-weight:800;margin-bottom:18px;}
 <!-- MAIN PANEL -->
 <div id="main-panel" style="display:none;">
 <nav>
-  <div class="logo">🛡️ Alym<span>Chems</span> Admin</div>
+  <div class="logo">🛡️ Alym<span>Science</span> Admin</div>
   <div style="display:flex;gap:12px;align-items:center;">
     <span style="font-size:12px;color:#64748b;">Админ-панель</span>
     <button class="btn btn-ghost" onclick="window.location.href='index.html'">← На сайт</button>
